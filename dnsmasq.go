@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"github.com/prometheus/client_golang/prometheus/collectors/version"
 	"log"
 	"net/http"
 
@@ -24,15 +25,14 @@ import (
 	"github.com/miekg/dns"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/version"
 )
 
 var (
-	listen = flag.String("listen", "localhost:9153", "listen address")
+	listen       = flag.String("listen", "localhost:9153", "listen address")
 	exposeLeases = flag.Bool("expose_leases", false, "expose dnsmasq leases as metrics (high cardinality)")
-	leasesPath = flag.String("leases_path",	"/var/lib/misc/dnsmasq.leases",	"path to the dnsmasq leases file")
-	dnsmasqAddr = flag.String("dnsmasq", "localhost:53", "dnsmasq host:port address")
-	metricsPath = flag.String("metrics_path", "/metrics", "path under which metrics are served")
+	leasesPath   = flag.String("leases_path", "/var/lib/misc/dnsmasq.leases", "path to the dnsmasq leases file")
+	dnsmasqAddr  = flag.String("dnsmasq", "localhost:53", "dnsmasq host:port address")
+	metricsPath  = flag.String("metrics_path", "/metrics", "path under which metrics are served")
 )
 
 func init() {
@@ -52,11 +52,11 @@ func main() {
 			LeasesPath:   *leasesPath,
 			ExposeLeases: *exposeLeases,
 		}
-		collector = collector.New(cfg)
-		reg       = prometheus.NewRegistry()
+		metricsCollector = collector.New(cfg)
+		reg              = prometheus.NewRegistry()
 	)
 
-	reg.MustRegister(collector)
+	reg.MustRegister(metricsCollector)
 
 	http.Handle(*metricsPath, promhttp.HandlerFor(
 		prometheus.Gatherers{prometheus.DefaultGatherer, reg},
